@@ -1,0 +1,13 @@
+{
+	"full_name": "Scott Blevins",
+	"email": "sblevins@gmail.com",
+	"github_username": "smeggingsmegger",
+	"project_name": "Flask App",
+	"app_name": "flaskapp",
+	"project_short_description": "A description of my project.",
+	"_copy_without_render": [
+      "*.css",
+      "*.html",
+      "*.js"
+  ]
+}
