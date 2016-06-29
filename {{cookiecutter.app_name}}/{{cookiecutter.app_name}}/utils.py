@@ -19,7 +19,7 @@ def failure(message=None):
 
 
 def chunks(my_list, num_chunks):
-    for index in xrange(0, len(my_list), num_chunks):
+    for index in list(range(0, len(my_list), num_chunks)):
         yield my_list[index:index + num_chunks] + [''] * (num_chunks - (len(my_list) - index))
 
 

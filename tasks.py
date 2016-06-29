@@ -16,13 +16,13 @@ REQUIREMENTS = os.path.join(COOKIE, 'requirements.txt')
 
 
 @task
-def build():
+def build(ctx):
     """Build the cookiecutter."""
     run('cookiecutter {0} --no-input'.format(HERE))
 
 
 @task
-def clean():
+def clean(ctx):
     """Clean out generated cookiecutter."""
     if os.path.exists(COOKIE):
         shutil.rmtree(COOKIE)
@@ -32,13 +32,13 @@ def clean():
 
 
 def _run_manage_command(command):
-    run('python {0} {1}'.format(os.path.join(COOKIE, 'manage.py'), command), echo=True)
+    run('python {0} {1}'.format(os.path.join(COOKIE, 'manage.py'), command), echo=True, pty=True)
 
 
 @task(pre=[clean, build])
-def test():
+def test(ctx):
     """Run lint commands and tests."""
-    run('pip install -r {0} --ignore-installed'.format(REQUIREMENTS), echo=True)
+    run('pip install -r {0} --ignore-installed'.format(REQUIREMENTS), echo=True, pty=True)
     os.chdir(COOKIE)
     _run_manage_command('lint')
     _run_manage_command('test')
