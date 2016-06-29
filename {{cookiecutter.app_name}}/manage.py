@@ -4,9 +4,9 @@ import os
 from glob import glob
 from subprocess import call
 
-from flask.ext.script.commands import ShowUrls, Clean
-from flask.ext.script import Command, Manager, Option, Server, Shell
-from flask.ext.migrate import Migrate, MigrateCommand
+from flask_script.commands import ShowUrls, Clean
+from flask_script import Command, Manager, Option, Server, Shell
+from flask_migrate import Migrate, MigrateCommand
 from {{cookiecutter.app_name}} import create_app
 from {{cookiecutter.app_name}}.models import db, User
 

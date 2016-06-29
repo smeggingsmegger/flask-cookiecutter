@@ -13,7 +13,7 @@ class TestModels:
     def test_user_save(self, testapp):
         """ Test Saving the user model to the database """
 
-        admin = User('admin', 'supersafepassword')
+        admin = User(username="admin", password="supersafepassword")
         db.session.add(admin)
         db.session.commit()
 
@@ -23,7 +23,7 @@ class TestModels:
     def test_user_password(self, testapp):
         """ Test password hashing and checking """
 
-        admin = User('admin', 'supersafepassword')
+        admin = User(username="admin", password="supersafepassword")
 
         assert admin.username == 'admin'
         assert admin.check_password('supersafepassword')

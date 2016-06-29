@@ -8,7 +8,7 @@ from mixin import OurMixin
 db = SQLAlchemy()
 
 from sqlalchemy.ext.associationproxy import association_proxy
-from {{cookiecutter.app_name}}.utils import uuid
+# from {{cookiecutter.app_name}}.utils import uuid
 
 
 def _role_find_or_create(r):

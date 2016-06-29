@@ -6,15 +6,17 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declared_attr
 import sqlalchemy.types as types
 
-from {{cookiecutter.app_name}}.utils import json_dumps, camelcase_to_underscore,\
-                      underscore_to_camelcase, uuid
+from {{cookiecutter.app_name}}.utils import (json_dumps, camelcase_to_underscore,
+                                             underscore_to_camelcase, uuid)
 from datetime import datetime
 
 db = SQLAlchemy()
 Session = db.session
 
+
 class ChoiceType(types.TypeDecorator):
     impl = types.String
+
     def __init__(self, choices, **kw):
         self.choices = dict(choices)
         super(ChoiceType, self).__init__(**kw)
@@ -24,6 +26,7 @@ class ChoiceType(types.TypeDecorator):
 
     def process_result_value(self, value, dialect):
         return self.choices[value]
+
 
 def safe_commit(session=None, close_after=False):
     """This commit function will rollback the transaction if
@@ -51,11 +54,14 @@ def safe_commit(session=None, close_after=False):
     if close_after:
         session.close()
 
+
 def results_to_dict(result_list, **kwargs):
     return [result.to_dict(**kwargs) for result in result_list]
 
+
 def results_to_json(result_list):
     return json_dumps([result.to_dict(camel_case=True) for result in result_list])
+
 
 def unique_results(result_list):
     ids = []
@@ -65,6 +71,7 @@ def unique_results(result_list):
             return_list.append(result)
             ids.append(result.id)
     return return_list
+
 
 def paginate(query_object, current_page, pagesize):
     """
@@ -119,6 +126,7 @@ def property_to_dict(model_property, **kwargs):
             return_val = model_property
     return return_val
 
+
 def filter_by_date(query_object, filter_dict, filter_column):
     """
     Adds to / from date filters to an existing SQLAlchemy query object.
@@ -137,7 +145,8 @@ def filter_by_date(query_object, filter_dict, filter_column):
                     filter_dict['fromMonth'], filter_dict['toMonth'],
                     filter_dict['fromDay'], filter_dict['toDay']]):
 
-            # Add SQL filters for each individual date part defined by the filter
+            # Add SQL filters for each individual date part defined by the
+            # filter
             for attr, key in (('year', 'fromYear'), ('year', 'toYear'),
                               ('month', 'fromMonth'), ('month', 'toMonth'),
                               ('day', 'fromDay'), ('day', 'toDay')):
@@ -145,22 +154,31 @@ def filter_by_date(query_object, filter_dict, filter_column):
                 if filter_dict[key]:
                     filter_date_part = extract(attr, filter_column)
                     if key.startswith('from'):
-                        query_object = query_object.filter(filter_date_part >= filter_dict[key])
+                        query_object = query_object.filter(
+                            filter_date_part >= filter_dict[key])
                     else:
-                        query_object = query_object.filter(filter_date_part <= filter_dict[key])
+                        query_object = query_object.filter(
+                            filter_date_part <= filter_dict[key])
 
         else:
             # if filter_dict is complete, search by the days
             try:
-                from_date = datetime(int(filter_dict['fromYear']), int(filter_dict['fromMonth']), int(filter_dict['fromDay']))
-                # Add in 23:59:59 for between() to grab all rows with time greater than midnight of the toDate #8482 -- Ben Hayden 06/13/12
-                to_date = datetime(int(filter_dict['toYear']), int(filter_dict['toMonth']), int(filter_dict['toDay']), 23, 59, 59)
-                query_object = query_object.filter(filter_column.between(from_date, to_date))
+                from_date = datetime(int(filter_dict['fromYear']), int(
+                    filter_dict['fromMonth']), int(filter_dict['fromDay']))
+                # Add in 23:59:59 for between() to grab all rows with time
+                # greater than midnight of the toDate #8482 -- Ben Hayden
+                # 06/13/12
+                to_date = datetime(int(filter_dict['toYear']), int(
+                    filter_dict['toMonth']), int(filter_dict['toDay']), 23, 59, 59)
+                query_object = query_object.filter(
+                    filter_column.between(from_date, to_date))
             except ValueError:
                 # Except out of any invalid dates, and return error message
-                raise UserWarning("Invalid Date Filters entered. Please check the date values and search again.")
+                raise UserWarning(
+                    "Invalid Date Filters entered. Please check the date values and search again.")
 
     return query_object
+
 
 class OurMixin(object):
     """Our Mixin class for defining declarative table models
@@ -210,10 +228,10 @@ class OurMixin(object):
     def clone(self, source):
         for column in source.__table__.c:
             if column.name != 'id':
-                setattr(self, camelcase_to_underscore(column.name), getattr(source, camelcase_to_underscore(column.name)))
+                setattr(self, camelcase_to_underscore(column.name), getattr(
+                    source, camelcase_to_underscore(column.name)))
             else:
                 setattr(self, 'id', uuid())
-
 
     @classmethod
     def count(self):
@@ -263,7 +281,8 @@ class OurMixin(object):
                 setattr(self, us_key, the_dict[key])
             else:
                 if strict:
-                    raise UserWarning('from_dict() error: The %s model does not have a %s key.' % (self.__class__, us_key))
+                    raise UserWarning('from_dict() error: The %s model does not have a %s key.' % (
+                        self.__class__, us_key))
         return self
 
     @classmethod
@@ -370,7 +389,8 @@ class OurMixin(object):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
             else:
-                raise UserWarning('%s has no attribute %s' % (self.__class__, key))
+                raise UserWarning('%s has no attribute %s' %
+                                  (self.__class__, key))
 
     def doc_dict(self, camel_case=False, columns=None):
         '''
@@ -390,11 +410,6 @@ class OurMixin(object):
             the_dict[key] = sqltype
 
         return the_dict
-
-    def to_knockout(self):
-        for column in self.__table__.c:
-            us_column_name = camelcase_to_underscore(column.name)
-            column_type = column.type
 
     def to_dict(self, camel_case=False, columns=None, datetime_to_str=False):
         '''
@@ -430,7 +445,7 @@ class OurMixin(object):
 
         @return: A JSON object with all the columns of the model as keys and values.
         '''
-        from json import loads # We need this import because our json_loads doesn't throw exceptions!
+        from json import loads  # We need this import because our json_loads doesn't throw exceptions!
         my_dict = self.to_dict(camel_case=True, columns=columns)
         for key in my_dict:
             try:
@@ -442,4 +457,4 @@ class OurMixin(object):
         return json_dumps(my_dict)
 
     def validate(self):
-        return { 'success': True, 'messages': [] }
+        return {'success': True, 'messages': []}
