@@ -36,7 +36,7 @@ lint:
 	flake8 --exclude=env .
 
 test:
-	py.test tests
+	python -m pytest tests
 
 source:
 	$(PYTHON) setup.py sdist
