@@ -9,5 +9,7 @@ python:
 install:
   - pip install cookiecutter
   - pip install invoke
+  - pip install flake8
+  - pip install pytest
 script:
   - invoke test
