@@ -1,11 +1,12 @@
 import json
 
+from ast import literal_eval
+from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, AnonymousUserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from {{cookiecutter.app_name}}.mixin import OurMixin
-
-db = SQLAlchemy()
+from {{cookiecutter.app_name}}.mixin import OurMixin, db
+from {{cookiecutter.app_name}}.utils import success
 
 from sqlalchemy.ext.associationproxy import association_proxy
 # from {{cookiecutter.app_name}}.utils import uuid
@@ -15,26 +16,26 @@ def _role_find_or_create(r):
     role = Role.query.filter_by(name=r).first()
     if not(role):
         role = Role(name=r)
-        db.session.add(role)
+        role.insert()
     return role
 
 
-user_role_table = db.Table('user_role',
+user_role_table = db.Table('user_roles',
                            db.Column(
                                'user_id', db.VARCHAR(36),
-                               db.ForeignKey('user.id')),
+                               db.ForeignKey('users.id')),
                            db.Column(
                                'role_id', db.VARCHAR(36),
-                               db.ForeignKey('role.id'))
+                               db.ForeignKey('roles.id'))
                            )
 
-role_ability_table = db.Table('role_ability',
+role_abilities_table = db.Table('role_abilities',
                               db.Column(
                                   'role_id', db.VARCHAR(36),
-                                  db.ForeignKey('role.id')),
+                                  db.ForeignKey('roles.id')),
                               db.Column(
                                   'ability_id', db.VARCHAR(36),
-                                  db.ForeignKey('ability.id'))
+                                  db.ForeignKey('abilities.id'))
                               )
 
 
@@ -49,11 +50,11 @@ class Role(OurMixin, db.Model):
     """
     Subclass this for your roles
     """
-    __tablename__ = 'role'
+    __tablename__ = 'roles'
     id = db.Column(db.VARCHAR(length=36), primary_key=True)
     name = db.Column(db.String(120), unique=True)
     abilities = db.relationship(
-        'Ability', secondary=role_ability_table, backref='roles')
+        'Ability', secondary=role_abilities_table, backref='roles')
 
     def __init__(self, name):
         self.name = name.lower()
@@ -66,7 +67,8 @@ class Role(OurMixin, db.Model):
                 name=ability).first()
             if not existing_ability:
                 existing_ability = Ability(ability)
-                db.session.add(existing_ability)
+                existing_ability.insert()
+                # safe_commit()
                 #  db.session.commit()
             self.abilities.append(existing_ability)
 
@@ -88,7 +90,7 @@ class Ability(OurMixin, db.Model):
     """
     Subclass this for your abilities
     """
-    __tablename__ = 'ability'
+    __tablename__ = 'abilities'
 
     id = db.Column(db.VARCHAR(length=36), primary_key=True)
     name = db.Column(db.String(120), unique=True)
@@ -106,7 +108,7 @@ class Ability(OurMixin, db.Model):
 
 
 class ApiKey(OurMixin, db.Model):
-    __tablename__ = 'api_key'
+    __tablename__ = 'api_keys'
 
     id = db.Column(db.VARCHAR(length=36), primary_key=True)
     key = db.Column(db.VARCHAR(length=512))
@@ -114,22 +116,25 @@ class ApiKey(OurMixin, db.Model):
 
 
 class Log(OurMixin, db.Model):
-    __tablename__ = 'log'
+    __tablename__ = 'logs'
 
     id = db.Column(db.VARCHAR(length=36), primary_key=True)
     action = db.Column(db.VARCHAR(length=5120))
-    user_id = db.Column(db.Integer(),
-                        db.ForeignKey('user.id', ondelete='CASCADE'),
+    user_id = db.Column(db.VARCHAR(length=36),
+                        db.ForeignKey('users.id', ondelete='CASCADE'),
                         nullable=False)
     user = db.relationship("User", cascade='delete')
 
 
 class User(UserMixin, OurMixin, db.Model):
+    __tablename__ = 'users'
+
     id = db.Column(db.VARCHAR(length=36), primary_key=True)
     username = db.Column(db.String())
     firstname = db.Column(db.String(32))
     lastname = db.Column(db.String(32))
     password = db.Column(db.String())
+    active = db.Column(db.Boolean(), default=True, server_default='1')
 
     _roles = db.relationship(
         'Role', secondary=user_role_table, backref='users')
@@ -149,6 +154,18 @@ class User(UserMixin, OurMixin, db.Model):
         OurMixin.__init__(self)
         UserMixin.__init__(self)
 
+    def validate(self):
+        return_value = success()
+        not_unique = User.filter(User.username == self.username).count()
+        if not_unique:
+            return_value['success'] = False
+            return_value['messages'].append("That user exists already.")
+        if not self.email:
+            return_value['success'] = False
+            return_value['messages'].append("An email address is required to create a user.")
+
+        return return_value
+
     def set_password(self, password):
         self.password = generate_password_hash(password)
 
@@ -162,7 +179,7 @@ class User(UserMixin, OurMixin, db.Model):
             return True
 
     def is_active(self):
-        return True
+        return self.active
 
     def is_anonymous(self):
         if isinstance(self, AnonymousUserMixin):
@@ -175,6 +192,9 @@ class User(UserMixin, OurMixin, db.Model):
 
     def remove_roles(self, *roles):
         self.roles = [role for role in self.roles if role not in roles]
+
+    def has_role(self, role):
+        return True if role in self.roles else False
 
     def get_id(self):
         return self.id
@@ -193,7 +213,7 @@ class Setting(OurMixin, db.Model):
     human_name = db.Column(db.TEXT(), nullable=True,
                            default='', server_default='')
     value = db.Column(db.TEXT(), nullable=True, default='', server_default='')
-    vartype = db.Column(db.Enum('int', 'str', 'bool', 'float'), nullable=False)
+    vartype = db.Column(db.Enum('int', 'str', 'bool', 'float', 'list'), nullable=False)
     allowed = db.Column(db.Text, nullable=True)
     system = db.Column(db.Boolean(), default=False, server_default='0')
     description = db.Column(db.TEXT(), nullable=True,
@@ -215,7 +235,10 @@ class Setting(OurMixin, db.Model):
         """
         Gets the value as the proper type.
         """
-        return __builtins__[self.vartype](self.value)
+        if self.vartype == 'list':
+            return list(literal_eval(self.value))
+        else:
+            return __builtins__[self.vartype](self.value)
 
 
 class Tag(OurMixin, db.Model):
@@ -236,4 +259,6 @@ class File(OurMixin, db.Model):
     width = db.Column(db.Integer(), default=0, server_default='0')
     height = db.Column(db.Integer(), default=0, server_default='0')
     size = db.Column(db.Integer(), default=0, server_default='0')
+    user_id = db.Column(db.VARCHAR(length=36), db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship("User")
     mimetype = db.Column(db.VARCHAR(length=256), nullable=False)

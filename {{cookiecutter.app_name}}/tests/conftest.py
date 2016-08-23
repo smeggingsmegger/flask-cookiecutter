@@ -1,7 +1,8 @@
 import pytest
 
 from {{cookiecutter.app_name}} import create_app
-from {{cookiecutter.app_name}}.models import db, User
+from {{cookiecutter.app_name}}.models import db, User, Role
+from {{cookiecutter.app_name}}.mixin import safe_commit
 
 
 @pytest.fixture()
@@ -14,8 +15,15 @@ def testapp(request):
 
     if getattr(request.module, "create_user", True):
         admin = User(username="admin", password="supersafepassword")
-        db.session.add(admin)
-        db.session.commit()
+        admin.insert()
+        my_role = Role(name='admin')
+        my_role.insert()
+        admin.add_roles('admin')
+
+        non_admin = User(username="non_admin", password="supersafepassword")
+        non_admin.insert()
+
+        safe_commit()
 
     def teardown():
         db.session.remove()

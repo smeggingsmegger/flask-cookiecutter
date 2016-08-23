@@ -1,4 +1,4 @@
-from flask import render_template, request, jsonify
+from flask import render_template, request, jsonify, redirect, url_for
 from functools import wraps
 from werkzeug.exceptions import Forbidden
 
@@ -7,11 +7,10 @@ PERM_ERROR_MESSAGE = 'You do not have permission to access this page or perform 
 
 def import_user():
     try:
-        from flask.ext.login import current_user
+        from flask_login import current_user
         return current_user
     except ImportError:
-        raise ImportError(
-            'User argument not passed and Flask-Login current_user could not be imported.')
+        raise ImportError('User argument not passed and Flask-Login current_user could not be imported.')
 
 
 def user_has(ability, get_user=import_user):
@@ -27,9 +26,17 @@ def user_has(ability, get_user=import_user):
                 name=ability).first()
             user_abilities = []
             current_user = get_user()
+            print(current_user)
+            try:
+                is_anonymous = current_user.is_anonymous()
+            except TypeError:
+                is_anonymous = True
 
-            for role in current_user._roles:
-                user_abilities += role.abilities
+            if is_anonymous == False:
+                for role in current_user.roles:
+                    user_abilities += role.abilities
+            else:
+                return redirect(url_for('main_controller.login'))
 
             if desired_ability in user_abilities:
                 return func(*args, **kwargs)
@@ -58,9 +65,17 @@ def user_is(role, get_user=import_user):
         @wraps(func)
         def inner(*args, **kwargs):
             current_user = get_user()
+            print(current_user)
+            try:
+                is_anonymous = current_user.is_anonymous()
+            except TypeError:
+                is_anonymous = True
 
-            if role in current_user.roles:
-                return func(*args, **kwargs)
+            if is_anonymous == False:
+                if role in current_user.roles:
+                    return func(*args, **kwargs)
+            else:
+                return redirect(url_for('main_controller.login'))
 
             if request.is_xhr:
                 # If this is an AJAX request return JSON instead.

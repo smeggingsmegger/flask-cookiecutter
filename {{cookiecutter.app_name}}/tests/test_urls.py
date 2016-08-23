@@ -46,3 +46,17 @@ class TestURLs:
 
         rv = testapp.get('/restricted')
         assert rv.status_code == 200
+
+    def test_restricted_logged_in_non_admin(self, testapp):
+        """ Tests if the restricted page returns
+            if the user is logged in as a non-admin
+        """
+
+        testapp.post('/login', data=dict(
+            username='non_admin',
+            password="supersafepassword"
+        ), follow_redirects=True)
+
+        rv = testapp.get('/restricted')
+        assert 'Restricted' in rv.data
+        assert rv.status_code == 200

@@ -2,32 +2,15 @@ Flask
 
 # Flask Extensions
 Flask-Assets
-Flask-Cache
-Flask-DebugToolbar
 Flask-Login
-Flask-SQLAlchemy
-Flask-Script
-Flask-WTF
-Flask-Mail
 Flask-Migrate
 Flask-Permissions
+Flask-Script
+Flask-SQLAlchemy
+Flask-WTF
 
 # Other
-itsdangerous
-cssmin
-jsmin
-Jinja2
-alembic
-blinker
-Mako
-MarkupSafe
-python-editor
-SQLAlchemy
-Werkzeug
+click
+pillow
+python-dateutil
 simplejson
-
-# Testing
-pytest
-pytest-cov
-mccabe
-flake8

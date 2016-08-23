@@ -1,18 +1,26 @@
-from flask_cache import Cache
-from flask_debugtoolbar import DebugToolbarExtension
-from flask_login import LoginManager
-from flask_assets import Environment
-
 from {{cookiecutter.app_name}}.models import User
 
-# Setup flask cache
-cache = Cache()
+try:
+    from flask_cache import Cache
+    # Setup flask cache
+    cache = Cache()
+except ImportError:
+    cache = None
 
-# init flask assets
-assets_env = Environment()
+try:
+    from flask_debugtoolbar import DebugToolbarExtension
+    debug_toolbar = DebugToolbarExtension()
+except ImportError:
+    debug_toolbar = None
 
-debug_toolbar = DebugToolbarExtension()
+try:
+    from flask_assets import Environment
+    # init flask assets
+    assets_env = Environment()
+except ImportError:
+    assets_env = None
 
+from flask_login import LoginManager
 login_manager = LoginManager()
 login_manager.session_protection = "strong"
 login_manager.login_view = "main_controller.login"

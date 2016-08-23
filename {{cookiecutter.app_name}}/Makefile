@@ -1,3 +1,6 @@
+PYTHON=`which python`
+PYTHON3=`which python3`
+
 .PHONY: docs test
 
 help:
@@ -21,6 +24,9 @@ deps:
 clean:
 	python manage.py clean
 
+clean:
+	python manage.py upgrade
+
 data:
 	python manage.py dropdb
 	python manage.py createdb
@@ -31,3 +37,21 @@ lint:
 
 test:
 	py.test tests
+
+source:
+	$(PYTHON) setup.py sdist
+
+upload:
+	$(PYTHON) setup.py register sdist upload
+
+pypi:
+	pandoc --from=markdown --to=rst --output=README.rst README.md
+	make source
+	make upload
+
+delpyc:
+	find . -name '*.pyc' -delete
+
+install-libs:
+	pip-2.7 install -U requirements.txt
+	pip-3.2 install -U requirements.txt

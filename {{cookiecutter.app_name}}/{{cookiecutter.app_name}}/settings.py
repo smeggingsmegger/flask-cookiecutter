@@ -1,18 +1,27 @@
+import os
 import tempfile
+
 db_file = tempfile.NamedTemporaryFile()
+
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))  # Don't touch this.
 
 
 class Config(object):
-    SECRET_KEY = 'dcuh98je98jwc9283j928ju3d982jc982jc98jc98jc490'
+    SECRET_KEY = 'REPLACE THIS KEY ASAP'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CACHE_NO_NULL_WARNING = True
+    DEBUG = True
+    # UPLOAD_FOLDER = os.path.abspath(APP_ROOT + '/../uploads/')
+    # ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'tiff'])
+    # MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 
 
 class ProdConfig(Config):
     ENV = 'prod'
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///../database.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('{{cookiecutter.app_name}}_DB_URI', 'sqlite:///{}/{{cookiecutter.app_name}}.db'.format(APP_ROOT))
 
     CACHE_TYPE = 'simple'
+    DEBUG = False
 
 
 class DevConfig(Config):
@@ -20,7 +29,7 @@ class DevConfig(Config):
     DEBUG = True
     DEBUG_TB_INTERCEPT_REDIRECTS = False
 
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///../database.db'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///../{{cookiecutter.app_name}}/{{cookiecutter.app_name}}.db'
 
     CACHE_TYPE = 'null'
     ASSETS_DEBUG = True
